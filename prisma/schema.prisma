@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model tbaparelhos {
+  codigo       Int    @id @default(autoincrement())
+  nomeaparelho String @db.VarChar(150)
+  modelo       String @db.VarChar(50)
+  marca        String @db.VarChar(50)
+  bateria      String @db.VarChar(150)
+  tbos         tbos[]
+}
+
+model tbcadastros {
+  codigo      Int     @id @default(autoincrement())
+  nome        String? @db.VarChar(50)
+  apelido     String? @db.VarChar(14)
+  tipodoc     Int?    @db.SmallInt
+  ndoc        BigInt?
+  telefone    BigInt?
+  email       String @db.VarChar(100) @unique
+  senhahash   String @db.VarChar(255)
+  ativo       Boolean @default(true)
+  endereco    String? @db.VarChar(50)
+  complemento String? @db.VarChar(30)
+  bairro      String? @db.VarChar(20)
+  cidade      String? @db.VarChar(30)
+  uf          String? @db.VarChar(2)
+  cep         Int?
+  pais        String? @db.VarChar(12)
+  notas       String? @db.VarChar(100)
+
+  tbos        tbos[]
+}
+
+model tbcores {
+  codigo  Int    @id @default(autoincrement())
+  nomecor String @db.VarChar(150)
+  tbos    tbos[]
+}
+
+model tbdefeitos {
+  id           Int    @id @default(autoincrement())
+  descricaodef String @db.VarChar(255)
+  tbos         tbos[]
+}
+
+model tbformapagamentos {
+  codigo Int     @id @default(autoincrement())
+  forma  String? @db.VarChar(20)
+  tbos   tbos[]
+}
+
+model tbitens {
+  nos        Int
+  nseq       Int        @default(autoincrement())
+  produto    Int
+  qtde       Int
+  preco      Int
+  desconto   Int
+  tbos       tbos       @relation(fields: [nos], references: [nos], onDelete: Cascade, onUpdate: NoAction)
+  tbprodutos tbprodutos @relation(fields: [produto], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([nos, nseq])
+}
+
+model tblogs_acesso {
+  id         Int        @id @default(autoincrement())
+  usuario_id Int
+  token      String     @db.VarChar(64)
+  data_login DateTime   @db.Timestamp(6)
+  tbusuarios tbusuarios @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model tbos {
+  nos               Int                @id @default(autoincrement())
+  codcliente        Int
+  datapedido        DateTime           @db.Date
+  dataagenda        DateTime?          @db.Date
+  pago              Int                @db.SmallInt
+  entregue          Int                @db.SmallInt
+  formapagamento    Int?
+  descricaoservico  String?            @db.VarChar(250)
+  dataentrega       DateTime?          @db.Date
+  datapagamento     DateTime?          @db.Date
+  codaparelho       Int?
+  codcor            Int?
+  codtecnico        Int?
+  coddefeito        Int?
+  garantia          Int?
+  senhadesenho      Int[]              @default([])
+  senhadigitada     String?            @db.VarChar(20)
+  servicorealizado  String?            @db.VarChar(400)
+  tbitens           tbitens[]
+  tbaparelhos       tbaparelhos?       @relation(fields: [codaparelho], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+  tbcadastros       tbcadastros        @relation(fields: [codcliente], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+  tbcores           tbcores?           @relation(fields: [codcor], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+  tbdefeitos        tbdefeitos?        @relation(fields: [coddefeito], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbusuarios        tbusuarios?        @relation(fields: [codtecnico], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tbformapagamentos tbformapagamentos? @relation(fields: [formapagamento], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tbpermissoes {
+  id      Int           @id @default(autoincrement())
+  tela_id Int
+  nivel   tbnivelacesso
+  tbtelas tbtelas       @relation(fields: [tela_id], references: [id], onDelete: Cascade)
+
+  @@unique([tela_id, nivel])
+}
+
+model tbprodutos {
+  codigo    Int       @id @default(autoincrement())
+  nome      String?   @db.VarChar(100)
+  descricao String?   @db.VarChar(250)
+  preco     Int?
+  tbitens   tbitens[]
+}
+
+model tbtelas {
+  id           Int            @id @default(autoincrement())
+  nome         String         @db.VarChar(50)
+  rota         String         @unique @db.VarChar(100)
+  tbpermissoes tbpermissoes[]
+}
+
+model tbusuarios {
+  id            Int             @id @default(autoincrement())
+  nome          String          @unique @db.VarChar(50)
+  senha         String          @db.VarChar(255)
+  email         String          @unique
+  nivel         tbnivelacesso   @default(ATENDIMENTO)
+  ativo         Boolean         @default(true)
+  criadoEm      DateTime        @default(now())
+  atualizadoEm  DateTime
+  tblogs_acesso tblogs_acesso[]
+  tbos          tbos[]
+}
+
+enum tbnivelacesso {
+  ADMIN
+  GESTOR
+  ATENDIMENTO
+  TECNICO
+}
