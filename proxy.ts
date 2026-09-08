@@ -40,4 +40,4 @@ export default async function proxy(request: NextRequest) {
 // Intercepta de forma global tudo que vai para /api ou /painel
 export const config = {
   matcher: ['/api/:path*', '/painel/:path*'],
-};S
+};
